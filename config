@@ -1,0 +1,13 @@
+#!/bin/bash
+
+export DESKTOP_CORE_NAME="spacedrive"
+export DESKTOP_CORE_BIN_NAME="$DESKTOP_CORE_NAME"
+export DESKTOP_CORE_VERSION=v0.1.1
+export DESKTOP_CORE_ORG="spacedriveapp"
+
+export DESKTOP_CORE_RELEASE_DOWNLOAD="https://github.com/${DESKTOP_CORE_ORG}/spacedrive/releases/download"
+
+export DESKTOP_CORE_CHECKSUMS=(
+  v0.1.1#darwin#arm64#057cdff2c4ee44bde0e409aa7098f14d35d75c89b48b1ca7b9390f1c57907b9c
+  v0.1.1#darwin#amd64#34f20a33034423e137f8406e860ec069d1c937d535cc853ab6b124ab23e74a12
+)

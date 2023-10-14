@@ -1,0 +1,124 @@
+#!/bin/bash
+
+install() {
+  # prepare vars
+  local name="$DESKTOP_CORE_NAME"
+
+  log::info "[$(timestamp)][desktop][$name] preparing ..."
+
+  # get system os/arch
+  local os="$DESKTOP_OS"
+  local arch="$DESKTOP_OS_ARCH"
+  local kernel="$DESKTOP_OS_KERNEL"
+  local platform="$DESKTOP_OS_PLATFORM"
+  # usr_bin_dir
+  local usr_bin_dir="$DESKTOP_USER_BIN_DIR"
+  local cache_dir="$DESKTOP_CACHE_DIR"
+  local tmp_dir="$DESKTOP_TMP_DIR"
+
+  #
+  case $platform in
+  darwin) ;;
+  *)
+    log::error "[$(timestamp)] unsupport platform: $platform"
+    return 1
+    ;;
+  esac
+
+  case $arch in
+  arm64)
+    arch="aarch64"
+    ;;
+  amd64)
+    arch="x86_64"
+    ;;
+  *)
+    log::error "[$(timestamp)] unsupport arch: $arch"
+    return 1
+    ;;
+  esac
+
+  # files
+  local cache_file="$cache_dir/$DESKTOP_CORE_VERSION.tar.gz"
+  # local source_bin_file="./$name"
+
+  # prepare context
+  log::info "[$(timestamp)][desktop][$name] context: $tmp_dir ..."
+  cd $tmp_dir
+
+  local is_cached="false"
+  if [ -f "$cache_file" ]; then
+    local cache_file_checksum=$(os::sha256 $cache_file)
+    local cache_file_checksum_line="${DESKTOP_CORE_VERSION}#${platform}#${arch}#${cache_file_checksum}"
+
+    # @TODO must reload config here for env DESKTOP_CORE_CHECKSUMS, or it will be empty
+    source $DESKTOP_DIR/config
+
+    for checksum in ${DESKTOP_CORE_CHECKSUMS[@]}; do
+      if [ "$checksum" = "$cache_file_checksum_line" ]; then
+        is_cached="true"
+        break
+      fi
+    done
+  fi
+
+  if [ "$is_cached" = "true" ]; then
+    log::info "[$(timestamp)][desktop][$name] found cache at $cache_file ..."
+  else
+    # reference: https://github.com/9seconds/iterm2/releases
+    # example:
+    #   https://github.com/spacedriveapp/spacedrive/releases/download/0.1.1/Spacedrive-Updater-darwin-aarch64.tar.gz
+    #   https://github.com/spacedriveapp/spacedrive/releases/download/0.1.1/Spacedrive-Updater-darwin-x86_64.tar.gz
+    # generate url
+    local url=""
+    case $arch in
+    arm64)
+      url="${DESKTOP_CORE_RELEASE_DOWNLOAD}/${DESKTOP_CORE_VERSION#v}/Spacedrive-Updater-${platform}-${arch}.tar.gz"
+      ;;
+    amd64)
+      url="${DESKTOP_CORE_RELEASE_DOWNLOAD}/${DESKTOP_CORE_VERSION#v}/Spacedrive-Updater-${platform}-${arch}.tar.gz"
+      ;;
+    *)
+      log::error "[$(timestamp)] unsupport arch: $arch"
+      return 1
+      ;;
+    esac
+
+    log::debug "[$(timestamp)][desktop][$name][$kernel][$arch] url: $url, file: ${cache_file}, tmp_dir: $tmp_dir"
+
+    # download
+    log::info "[$(timestamp)][desktop][$name] downloading from $url ..."
+    os::download $cache_file $url
+  fi
+
+  local app_name="Spacedrive.app"
+  # install
+  log::info "[$(timestamp)][desktop][$name] installing $cache_file ..."
+  case $arch in
+  arm64)
+    install::tgz $cache_file ${name} "${app_name}"
+    ;;
+  amd64)
+    install::tgz $cache_file ${name} "${app_name}"
+    ;;
+  *)
+    log::error "[$(timestamp)] unsupport arch: $arch"
+    return 1
+    ;;
+  esac
+
+  # actve
+  log::info "[$(timestamp)][desktop] active app without warning which app is damaged and can't be opened ..."
+  sudo xattr -rd com.apple.quarantine /Applications/${app_name}
+  if [ "$?" != "0" ]; then
+    log::error "[$(timestamp)][desktop] failed to active app: ${app_name} (command: sudo xattr -rd com.apple.quarantine /Applications/${app_name})."
+    return 1
+  fi
+  log::warn "[$(timestamp)][desktop] if it still has warning, please go to System Preferences -> Security & Privacy -> General, and click Open Anyway button."
+
+  # clean
+  log::info "[$(timestamp)][desktop][$name] cleaning ..."
+  rm -rf $tmp_dir
+}
+
+export -f install
