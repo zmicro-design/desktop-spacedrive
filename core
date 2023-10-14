@@ -25,12 +25,13 @@ install() {
     ;;
   esac
 
+  local arch_in_url="$arch"
   case $arch in
   arm64)
-    arch="aarch64"
+    arch_in_url="aarch64"
     ;;
   amd64)
-    arch="x86_64"
+    arch_in_url="x86_64"
     ;;
   *)
     log::error "[$(timestamp)] unsupport arch: $arch"
@@ -73,10 +74,10 @@ install() {
     local url=""
     case $arch in
     arm64)
-      url="${DESKTOP_CORE_RELEASE_DOWNLOAD}/${DESKTOP_CORE_VERSION#v}/Spacedrive-Updater-${platform}-${arch}.tar.gz"
+      url="${DESKTOP_CORE_RELEASE_DOWNLOAD}/${DESKTOP_CORE_VERSION#v}/Spacedrive-Updater-${platform}-${arch_in_url}.tar.gz"
       ;;
     amd64)
-      url="${DESKTOP_CORE_RELEASE_DOWNLOAD}/${DESKTOP_CORE_VERSION#v}/Spacedrive-Updater-${platform}-${arch}.tar.gz"
+      url="${DESKTOP_CORE_RELEASE_DOWNLOAD}/${DESKTOP_CORE_VERSION#v}/Spacedrive-Updater-${platform}-${arch_in_url}.tar.gz"
       ;;
     *)
       log::error "[$(timestamp)] unsupport arch: $arch"
